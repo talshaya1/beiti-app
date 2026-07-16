@@ -589,11 +589,11 @@
       <div class="q-card">
         <div class="q-label">📆 اختر التاريخ</div>
         <div style="display:flex;gap:8px;margin-top:8px">
-          <select id="dateMonthSel" onchange="onDateSelChange()" style="flex:1;padding:12px 10px;border-radius:10px;border:1.5px solid var(--border);background:var(--input-bg);color:var(--text);font-size:14px;font-family:inherit;outline:none;appearance:none;-webkit-appearance:none;text-align:center">
-            <option value="">الشهر</option>
+          <select id="dateMonthSel" onchange="onDateSelChange()" style="flex:1;padding:12px 10px;border-radius:10px;border:1.5px solid var(--border);background:var(--input-bg);color:var(--text);font-size:14px;font-family:inherit;outline:none">
+            <option value="">▾ الشهر</option>
           </select>
-          <select id="dateDaySel" onchange="onDateSelChange()" style="flex:1;padding:12px 10px;border-radius:10px;border:1.5px solid var(--border);background:var(--input-bg);color:var(--text);font-size:14px;font-family:inherit;outline:none;appearance:none;-webkit-appearance:none;text-align:center">
-            <option value="">اليوم</option>
+          <select id="dateDaySel" onchange="if(this.value) selectDateStr(this.value); else document.getElementById('timeSlotsCard').style.display='none'" style="flex:1;padding:12px 10px;border-radius:10px;border:1.5px solid var(--border);background:var(--input-bg);color:var(--text);font-size:14px;font-family:inherit;outline:none">
+            <option value="">▾ اليوم</option>
           </select>
         </div>
       </div>
@@ -762,6 +762,9 @@ function switchTab(tab) {
   document.getElementById('bottomNav').style.display = 'flex';
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+  const showProg = tab === 'home';
+  document.querySelector('.progress-wrap').style.display = showProg ? '' : 'none';
+  document.querySelector('.progress-label').style.display = showProg ? '' : 'none';
   switch(tab) {
     case 'home':    showScreen('screenForm'); break;
     case 'history': showScreen('screenHistory'); renderHistory(); break;
@@ -865,10 +868,10 @@ function initBooking() {
   });
   window._bookingDays = days;
   window._bookingByMonth = byMonth;
-  Object.values(byMonth).forEach(m => {
+  Object.keys(byMonth).forEach(k => {
     const o = document.createElement('option');
-    o.value = m.month + '-' + m.year;
-    o.textContent = m.label;
+    o.value = k;
+    o.textContent = byMonth[k].label;
     monthSel.appendChild(o);
   });
   if (Object.keys(byMonth).length === 1) {
@@ -892,16 +895,14 @@ function onDateSelChange() {
   const monthSel = document.getElementById('dateMonthSel');
   const daySel = document.getElementById('dateDaySel');
   const mv = monthSel.value;
-  if (!mv) { daySel.innerHTML = '<option value="">اليوم</option>'; document.getElementById('timeSlotsCard').style.display='none'; return; }
-  const monthObj = window._bookingByMonth[mv.split('-')[0] + '-' + mv.split('-')[1].replace(/.*-/,'')];
-  // find by key
-  const key = Object.keys(window._bookingByMonth).find(k => {
-    const m = window._bookingByMonth[k];
-    return (m.month + '-' + m.year) === mv;
-  });
-  if (key) fillDays(window._bookingByMonth[key]);
+  if (!mv) {
+    daySel.innerHTML = '<option value="">▾ اليوم</option>';
+    document.getElementById('timeSlotsCard').style.display = 'none';
+    return;
+  }
+  const monthObj = window._bookingByMonth[mv];
+  if (monthObj) fillDays(monthObj);
   if (daySel.value) selectDateStr(daySel.value);
-  daySel.onchange = () => { if (daySel.value) selectDateStr(daySel.value); else document.getElementById('timeSlotsCard').style.display='none'; };
 }
 
 async function selectDateStr(dateStr) {
