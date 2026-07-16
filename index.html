@@ -324,6 +324,76 @@
       html, body { background: var(--bg); align-items: flex-start; }
       #app { width: 100%; height: 100%; border-radius: 0; box-shadow: none; }
     }
+
+    /* ── Bottom Nav ── */
+    #bottomNav {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: #fff; border-top: 1px solid var(--border);
+      display: flex; z-index: 20;
+      padding-bottom: max(env(safe-area-inset-bottom, 0px), 16px);
+    }
+    .nav-tab {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      padding: 10px 0 6px; gap: 3px;
+      border: none; background: none; cursor: pointer;
+      font-family: inherit; color: var(--muted); transition: color .15s;
+    }
+    .nav-tab.active { color: var(--primary); }
+    .nav-tab-icon { font-size: 26px; line-height: 1; }
+    .nav-tab-label { font-size: 10px; font-weight: 600; }
+    .scroll-pad { padding: 18px 18px 100px; }
+
+    /* ── History ── */
+    .history-card {
+      background: var(--card); border: 1.5px solid var(--border);
+      border-radius: 14px; padding: 14px; margin-bottom: 12px;
+    }
+    .history-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .history-card-date { font-size: 12px; color: var(--muted); font-weight: 600; }
+    .history-delete-btn { border: none; background: none; font-size: 18px; cursor: pointer; padding: 4px; }
+    .history-card-meta { font-size: 13px; color: var(--text); font-weight: 600; margin-bottom: 6px; }
+    .history-card-notes { font-size: 12px; color: var(--muted); margin-bottom: 10px; background: var(--bg); border-radius: 8px; padding: 8px 10px; }
+    .history-view-btn {
+      width: 100%; padding: 10px; border-radius: 10px;
+      border: 1.5px solid var(--primary); background: none;
+      color: var(--primary); font-size: 13px; font-weight: 700;
+      font-family: inherit; cursor: pointer;
+    }
+
+    /* ── Booking ── */
+    .date-scroll { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0 8px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .date-scroll::-webkit-scrollbar { display: none; }
+    .date-btn {
+      flex-shrink: 0; display: flex; flex-direction: column; align-items: center;
+      padding: 10px 14px; border-radius: 12px; border: 1.5px solid var(--border);
+      background: var(--input-bg); cursor: pointer; gap: 2px; transition: all .15s; font-family: inherit;
+    }
+    .date-btn.selected { background: var(--primary); border-color: var(--primary); }
+    .date-btn .day-name { font-size: 10px; color: var(--muted); font-weight: 600; }
+    .date-btn.selected .day-name { color: rgba(255,255,255,.7); }
+    .date-btn .day-num { font-size: 18px; font-weight: 700; color: var(--text); }
+    .date-btn.selected .day-num { color: #fff; }
+    .date-btn .day-month { font-size: 9px; color: var(--muted); }
+    .date-btn.selected .day-month { color: rgba(255,255,255,.6); }
+    .time-slots { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .time-btn {
+      padding: 14px 8px; border-radius: 12px; border: 1.5px solid var(--border);
+      background: var(--input-bg); cursor: pointer; font-family: inherit;
+      font-size: 14px; font-weight: 600; color: var(--text); transition: all .15s; line-height: 1.4;
+    }
+    .time-btn.selected { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .time-btn.booked { background: var(--bg); color: var(--muted); opacity: .5; cursor: not-allowed; }
+    .booking-input {
+      width: 100%; background: var(--input-bg); border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 12px 13px; font-size: 14px; font-family: inherit;
+      color: var(--text); direction: ltr; outline: none; transition: border-color .2s; margin-top: 8px;
+    }
+    .booking-input:focus { border-color: var(--primary); }
+    .confirm-box {
+      background: linear-gradient(135deg, rgba(27,63,107,.06), rgba(15,40,71,.04));
+      border: 1.5px solid var(--border); border-radius: 16px; padding: 24px 20px; text-align: center;
+    }
+    .location-card { background: var(--card); border: 1.5px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 12px; }
   </style>
 </head>
 <body>
@@ -509,12 +579,112 @@
     </div>
   </div>
 
-  <!-- Bottom bar -->
+  <!-- تصوراتي -->
+  <div class="screen" id="screenHistory">
+    <div class="scroll-pad">
+      <div class="sec-title">📋 تصوراتي</div>
+      <div class="sec-sub">جميع التصورات مرتبة من الأحدث إلى الأقدم</div>
+      <div id="historyList"></div>
+    </div>
+  </div>
+
+  <!-- تفاصيل تصور -->
+  <div class="screen" id="screenHistoryDetail">
+    <div id="historyDetailContent" style="padding:18px 18px 100px"></div>
+  </div>
+
+  <!-- احجز موعد -->
+  <div class="screen" id="screenBooking">
+    <div class="scroll-pad">
+      <div class="sec-title">📅 احجز موعد</div>
+      <div class="sec-sub">استشارة مجانية مع المهندس الاستشاري</div>
+
+      <div class="q-card">
+        <div class="q-label">📆 اختر التاريخ</div>
+        <div class="date-scroll" id="datePicker"></div>
+      </div>
+
+      <div class="q-card" id="timeSlotsCard" style="display:none">
+        <div class="q-label">🕐 اختر الوقت</div>
+        <div class="time-slots" id="timeSlots"></div>
+      </div>
+
+      <div class="q-card" id="contactCard" style="display:none">
+        <div class="q-label">📞 رقم الهاتف <span class="req">* إلزامي</span></div>
+        <input class="booking-input" type="tel" id="bookingPhone" placeholder="+965 XXXX XXXX">
+        <div class="q-label" style="margin-top:14px">📧 البريد الإلكتروني <span class="req">(اختياري)</span></div>
+        <input class="booking-input" type="email" id="bookingEmail" placeholder="email@example.com">
+        <button class="cta-btn" style="margin-top:16px" id="bookingSubmitBtn" onclick="confirmBooking()">✅ ثبّت الموعد</button>
+      </div>
+
+      <div id="bookingConfirm" style="display:none">
+        <div class="confirm-box">
+          <div style="font-size:48px;margin-bottom:12px">✅</div>
+          <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px">تم تثبيت موعدك!</div>
+          <div id="confirmDetails" style="font-size:13px;color:var(--muted);line-height:2"></div>
+        </div>
+        <div class="q-card" style="margin-top:12px">
+          <div class="q-label" style="margin-bottom:10px">📋 يرجى إحضار ما يلي للاستشارة:</div>
+          <div style="font-size:13px;color:var(--text);line-height:2.2">
+            • صورة من سند الملكية (القسيمة)<br>
+            • مخطط الموقع من البلدية<br>
+            • أي مخططات أو صور مرجعية للتصميم<br>
+            • قائمة باحتياجاتك وأولوياتك<br>
+            • ميزانية تقريبية للمشروع
+          </div>
+        </div>
+        <button class="cta-btn" style="margin-top:12px" onclick="resetBooking()">📅 حجز موعد آخر</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- موقعنا -->
+  <div class="screen" id="screenLocation">
+    <div class="scroll-pad">
+      <div class="sec-title">📍 موقعنا</div>
+      <div class="sec-sub">دار التراث للاستشارات الهندسية</div>
+      <div class="location-card">
+        <div style="font-size:28px;margin-bottom:10px">🏢</div>
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">دار التراث للاستشارات الهندسية</div>
+        <div style="font-size:13px;color:var(--muted);line-height:2">
+          الكويت<br>
+          ساعات العمل: الأحد – الخميس<br>
+          9:00 صباحاً – 5:00 مساءً
+        </div>
+      </div>
+      <div class="location-card">
+        <div style="font-size:28px;margin-bottom:10px">📞</div>
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">تواصل معنا</div>
+        <div style="font-size:13px;color:var(--muted);line-height:2">للتواصل المباشر أو الاستفسار<br>أو احجز موعدك من خلال التطبيق</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom bar (نتيجة AI) -->
   <div class="bottom-bar" id="bottomBar" style="display:none">
     <button class="btn btn-ghost" onclick="goBack()">← رجوع</button>
     <button class="btn btn-primary" onclick="saveReport()">📤 مشاركة / حفظ</button>
   </div>
 
+  <!-- Bottom Nav -->
+  <div id="bottomNav">
+    <button class="nav-tab active" data-tab="home" onclick="switchTab('home')">
+      <span class="nav-tab-icon">🏠</span>
+      <span class="nav-tab-label">الرئيسية</span>
+    </button>
+    <button class="nav-tab" data-tab="history" onclick="switchTab('history')">
+      <span class="nav-tab-icon">📋</span>
+      <span class="nav-tab-label">تصوراتي</span>
+    </button>
+    <button class="nav-tab" data-tab="booking" onclick="switchTab('booking')">
+      <span class="nav-tab-icon">📅</span>
+      <span class="nav-tab-label">احجز موعد</span>
+    </button>
+    <button class="nav-tab" data-tab="location" onclick="switchTab('location')">
+      <span class="nav-tab-icon">📍</span>
+      <span class="nav-tab-label">موقعنا</span>
+    </button>
+  </div>
 
 </div>
 <script>
@@ -584,9 +754,198 @@ function showScreen(id) {
   document.getElementById(id).classList.add('active');
 }
 function goBack() {
-  showScreen('screenForm');
   document.getElementById('bottomBar').style.display = 'none';
+  document.getElementById('bottomNav').style.display = 'flex';
+  showScreen('screenForm');
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('[data-tab="home"]').classList.add('active');
   updateProgress();
+}
+
+// ── Tab Navigation ──
+function switchTab(tab) {
+  document.getElementById('bottomBar').style.display = 'none';
+  document.getElementById('bottomNav').style.display = 'flex';
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+  switch(tab) {
+    case 'home':    showScreen('screenForm'); break;
+    case 'history': showScreen('screenHistory'); renderHistory(); break;
+    case 'booking': showScreen('screenBooking'); initBooking(); break;
+    case 'location':showScreen('screenLocation'); break;
+  }
+}
+
+// ── History ──
+function saveToHistory(stateSnap, extras, notes, raw) {
+  try {
+    const history = JSON.parse(localStorage.getItem('beiti_history') || '[]');
+    history.unshift({ id: Date.now(), date: new Date().toISOString(), state: stateSnap, extras, notes, content: raw });
+    if (history.length > 50) history.pop();
+    localStorage.setItem('beiti_history', JSON.stringify(history));
+  } catch(e) {}
+}
+
+const AR_DAYS = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+const AR_MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+
+function fmtDate(iso) {
+  const d = new Date(iso);
+  return `${AR_DAYS[d.getDay()]} ${d.getDate()} ${AR_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function renderHistory() {
+  const history = JSON.parse(localStorage.getItem('beiti_history') || '[]');
+  const el = document.getElementById('historyList');
+  if (!history.length) {
+    el.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--muted);font-size:14px;line-height:2">لا توجد تصورات محفوظة بعد.<br>اضغط الرئيسية وأنشئ تصورك الأول!</div>';
+    return;
+  }
+  el.innerHTML = history.map((item, idx) => `
+    <div class="history-card">
+      <div class="history-card-header">
+        <div class="history-card-date">${fmtDate(item.date)}</div>
+        <button class="history-delete-btn" onclick="deleteHistory(${item.id})">🗑️</button>
+      </div>
+      <div class="history-card-meta">${item.state.loc||'—'} • ${item.state.area} م² • ${item.state.floors} أدوار • ${item.state.people} أفراد</div>
+      ${item.extras?.length ? `<div style="font-size:11px;color:var(--muted);margin-bottom:8px">${item.extras.join(' • ')}</div>`:''}
+      ${item.notes ? `<div class="history-card-notes">📝 ${item.notes}</div>`:''}
+      <button class="history-view-btn" onclick="viewHistory(${idx})">👁 عرض التفاصيل</button>
+    </div>`).join('');
+}
+
+function deleteHistory(id) {
+  let h = JSON.parse(localStorage.getItem('beiti_history') || '[]');
+  h = h.filter(i => i.id !== id);
+  localStorage.setItem('beiti_history', JSON.stringify(h));
+  renderHistory();
+}
+
+function viewHistory(idx) {
+  const h = JSON.parse(localStorage.getItem('beiti_history') || '[]');
+  const item = h[idx];
+  if (!item) return;
+  const el = document.getElementById('historyDetailContent');
+  const notesHtml = item.notes ? `<div class="result-card" style="margin-bottom:14px;border-right:3px solid var(--primary)">
+    <div style="font-size:12px;color:var(--primary);font-weight:700;margin-bottom:6px">📝 ملاحظاتك الخاصة</div>
+    <p style="font-size:13px">${item.notes}</p></div>` : '';
+  el.innerHTML = `
+    <button onclick="switchTab('history')" style="border:none;background:none;color:var(--primary);font-size:14px;font-family:inherit;cursor:pointer;margin-bottom:16px;padding:0">← رجوع للتصوراتي</button>
+    <div class="result-header">
+      <h2>تصور أولي</h2>
+      <p>${item.state.loc||'—'} • ${item.state.area} م² • ${item.state.floors} أدوار • ${item.state.people} أفراد</p>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">${fmtDate(item.date)}</div>
+    </div>
+    ${notesHtml}
+    ${renderSections(parseRaw(item.content))}`;
+  showScreen('screenHistoryDetail');
+}
+
+// ── Booking ──
+let selDate = null, selTime = null, bookedMap = {};
+const SLOTS = [{ l:'9:00 ص', v:'09:00' },{ l:'11:00 ص', v:'11:00' },{ l:'1:00 م', v:'13:00' },{ l:'3:00 م', v:'15:00' }];
+
+function workingDays(n) {
+  const days = [], d = new Date();
+  d.setHours(0,0,0,0); d.setDate(d.getDate()+1);
+  while (days.length < n) { if (d.getDay()!==5 && d.getDay()!==6) days.push(new Date(d)); d.setDate(d.getDate()+1); }
+  return days;
+}
+function d2s(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+
+function initBooking() {
+  if (document.getElementById('bookingConfirm').style.display === 'block') return;
+  selDate = null; selTime = null;
+  document.getElementById('timeSlotsCard').style.display = 'none';
+  document.getElementById('contactCard').style.display = 'none';
+  const picker = document.getElementById('datePicker');
+  if (picker.children.length) return;
+  picker.innerHTML = workingDays(14).map(d =>
+    `<button class="date-btn" onclick="selectDate('${d2s(d)}',this)">
+      <span class="day-name">${AR_DAYS[d.getDay()]}</span>
+      <span class="day-num">${d.getDate()}</span>
+      <span class="day-month">${AR_MONTHS[d.getMonth()]}</span>
+    </button>`).join('');
+}
+
+async function selectDate(dateStr, el) {
+  selDate = dateStr; selTime = null;
+  document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('timeSlotsCard').style.display = 'block';
+  document.getElementById('timeSlots').innerHTML = '<div style="text-align:center;padding:12px;color:var(--muted);font-size:12px;grid-column:1/-1">جارٍ التحقق من المواعيد...</div>';
+  document.getElementById('contactCard').style.display = 'none';
+  try {
+    const r = await fetch(`/api/booking?date=${dateStr}`);
+    const d = await r.json();
+    bookedMap[dateStr] = d.booked || [];
+  } catch { bookedMap[dateStr] = []; }
+  renderSlots(dateStr);
+}
+
+function renderSlots(dateStr) {
+  const booked = bookedMap[dateStr] || [];
+  document.getElementById('timeSlots').innerHTML = SLOTS.map(s => {
+    const taken = booked.includes(s.v);
+    return `<button class="time-btn ${taken?'booked':''}" ${taken?'disabled':`onclick="selectTime('${s.v}',this)"`}>
+      ${s.l}${taken?'<br><span style="font-size:10px">محجوز</span>':''}
+    </button>`;
+  }).join('');
+}
+
+function selectTime(t, el) {
+  selTime = t;
+  document.querySelectorAll('.time-btn:not(.booked)').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('contactCard').style.display = 'block';
+  document.getElementById('contactCard').scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+async function confirmBooking() {
+  const phone = document.getElementById('bookingPhone').value.trim();
+  const email = document.getElementById('bookingEmail').value.trim();
+  if (!selDate || !selTime) { showToast('⚠️ اختر التاريخ والوقت'); return; }
+  if (!phone) { showToast('⚠️ رقم الهاتف إلزامي'); return; }
+  const btn = document.getElementById('bookingSubmitBtn');
+  btn.textContent = 'جارٍ التثبيت...'; btn.disabled = true;
+  try {
+    const payload = new Blob([JSON.stringify({ date:selDate, time:selTime, phone, email })], { type:'application/json' });
+    const r = await fetch('/api/booking', { method:'POST', body:payload });
+    const d = await r.json();
+    if (!r.ok) {
+      if (d.error === 'ALREADY_BOOKED') {
+        showToast('⚠️ هذا الموعد محجوز، اختر وقتاً آخر');
+        bookedMap[selDate] = [...(bookedMap[selDate]||[]), selTime];
+        renderSlots(selDate); selTime = null;
+        document.getElementById('contactCard').style.display = 'none';
+      } else throw new Error(d.error||'خطأ');
+      btn.textContent = '✅ ثبّت الموعد'; btn.disabled = false;
+      return;
+    }
+    const tLabel = SLOTS.find(s => s.v===selTime)?.l || selTime;
+    const dObj = new Date(selDate);
+    document.getElementById('confirmDetails').innerHTML = `📅 ${AR_DAYS[dObj.getDay()]} ${dObj.getDate()} ${AR_MONTHS[dObj.getMonth()]}<br>🕐 ${tLabel}<br>📞 ${phone}${email?`<br>📧 ${email}`:''}`;
+    document.getElementById('timeSlotsCard').style.display = 'none';
+    document.getElementById('contactCard').style.display = 'none';
+    document.getElementById('bookingConfirm').style.display = 'block';
+    document.getElementById('bookingConfirm').scrollIntoView({ behavior:'smooth' });
+  } catch(e) {
+    showToast('⚠️ '+(e.message||'حدث خطأ، حاول مجدداً'));
+    btn.textContent = '✅ ثبّت الموعد'; btn.disabled = false;
+  }
+}
+
+function resetBooking() {
+  selDate = null; selTime = null; bookedMap = {};
+  document.getElementById('datePicker').innerHTML = '';
+  document.getElementById('timeSlotsCard').style.display = 'none';
+  document.getElementById('contactCard').style.display = 'none';
+  document.getElementById('bookingConfirm').style.display = 'none';
+  document.getElementById('bookingPhone').value = '';
+  document.getElementById('bookingEmail').value = '';
+  document.getElementById('bookingSubmitBtn').textContent = '✅ ثبّت الموعد';
+  document.getElementById('bookingSubmitBtn').disabled = false;
+  initBooking();
 }
 
 // ── Image prompt ──
@@ -698,6 +1057,7 @@ async function generate() {
 
   showScreen('screenResult');
   document.getElementById('bottomBar').style.display = 'flex';
+  document.getElementById('bottomNav').style.display = 'none';
   document.getElementById('progressBar').style.width = '100%';
   document.getElementById('progressPct').textContent = '100%';
   document.getElementById('progressText').textContent = 'التصور جاهز ✓';
@@ -719,7 +1079,12 @@ async function generate() {
     if (!res.ok) throw new Error(json?.error?.message || `خطأ ${res.status}`);
     const raw = json?.choices?.[0]?.message?.content;
     if (!raw) throw new Error('الرد فارغ من الخادم');
-    document.getElementById('aiContent').innerHTML = renderSections(parseRaw(raw));
+    const sections = renderSections(parseRaw(raw));
+    const notesHtml = notes ? `<div class="result-card" style="margin-bottom:14px;border-right:3px solid var(--primary)">
+      <div style="font-size:12px;color:var(--primary);font-weight:700;margin-bottom:6px">📝 ملاحظاتك الخاصة</div>
+      <p style="font-size:13px">${notes}</p></div>` : '';
+    document.getElementById('aiContent').innerHTML = notesHtml + sections;
+    saveToHistory({ area:state.area, people:state.people, floors:state.floors, loc:state.loc, country:state.country }, extras, notes, raw);
     showImgPrompt();
   } catch (e) {
     document.getElementById('aiContent').innerHTML =
