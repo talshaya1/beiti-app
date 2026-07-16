@@ -708,17 +708,14 @@ async function generate() {
     '<p style="text-align:center;font-size:12px;color:var(--muted);margin-top:-10px">يتم إعداد تصورك...</p>';
 
   try {
-    const res = await fetch('/api/ai', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    const payload = new Blob([JSON.stringify({
         model: 'deepseek-chat', stream: false, max_tokens: 1200,
         messages: [
           { role: 'system', content: 'أنت مساعد معماري متخصص في البناء السكني الخليجي. ردودك باللغة العربية الواضحة.' },
           { role: 'user', content: buildPrompt(state, extras, notes) }
         ]
-      })
-    });
+      })], { type: 'application/json' });
+    const res = await fetch('/api/ai', { method: 'POST', body: payload });
     const json = await res.json();
     if (!res.ok) throw new Error(json?.error?.message || `خطأ ${res.status}`);
     const raw = json?.choices?.[0]?.message?.content;
