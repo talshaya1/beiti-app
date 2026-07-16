@@ -588,14 +588,9 @@
 
       <div class="q-card">
         <div class="q-label">📆 اختر التاريخ</div>
-        <div style="display:flex;gap:8px;margin-top:8px">
-          <select id="dateMonthSel" onchange="onDateSelChange()" style="flex:1;padding:12px 10px;border-radius:10px;border:1.5px solid var(--border);background:var(--input-bg);color:var(--text);font-size:14px;font-family:inherit;outline:none">
-            <option value="">▾ الشهر</option>
-          </select>
-          <select id="dateDaySel" onchange="if(this.value) selectDateStr(this.value); else document.getElementById('timeSlotsCard').style.display='none'" style="flex:1;padding:12px 10px;border-radius:10px;border:1.5px solid var(--border);background:var(--input-bg);color:var(--text);font-size:14px;font-family:inherit;outline:none">
-            <option value="">▾ اليوم</option>
-          </select>
-        </div>
+        <select id="datePicker" onchange="if(this.value) selectDateStr(this.value); else document.getElementById('timeSlotsCard').style.display='none'" style="width:100%;margin-top:8px;padding:13px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--input-bg);color:var(--text);font-size:14px;font-family:inherit;outline:none;display:block">
+          <option value="">— اختر يوماً —</option>
+        </select>
       </div>
 
       <div class="q-card" id="timeSlotsCard" style="display:none">
@@ -855,54 +850,14 @@ function initBooking() {
   selDate = null; selTime = null;
   document.getElementById('timeSlotsCard').style.display = 'none';
   document.getElementById('contactCard').style.display = 'none';
-  const monthSel = document.getElementById('dateMonthSel');
-  const daySel = document.getElementById('dateDaySel');
-  if (monthSel.options.length > 1) return;
-  const days = workingDays(30);
-  // group by month
-  const byMonth = {};
-  days.forEach(d => {
-    const mk = d.getFullYear() + '-' + d.getMonth();
-    if (!byMonth[mk]) byMonth[mk] = { label: AR_MONTHS[d.getMonth()] + ' ' + d.getFullYear(), month: d.getMonth(), year: d.getFullYear(), days: [] };
-    byMonth[mk].days.push(d);
-  });
-  window._bookingDays = days;
-  window._bookingByMonth = byMonth;
-  Object.keys(byMonth).forEach(k => {
-    const o = document.createElement('option');
-    o.value = k;
-    o.textContent = byMonth[k].label;
-    monthSel.appendChild(o);
-  });
-  if (Object.keys(byMonth).length === 1) {
-    monthSel.selectedIndex = 1;
-    fillDays(Object.values(byMonth)[0]);
-  }
-}
-
-function fillDays(monthObj) {
-  const daySel = document.getElementById('dateDaySel');
-  daySel.innerHTML = '<option value="">اليوم</option>';
-  monthObj.days.forEach(d => {
+  const picker = document.getElementById('datePicker');
+  if (picker.options.length > 1) return;
+  workingDays(30).forEach(d => {
     const o = document.createElement('option');
     o.value = d2s(d);
-    o.textContent = AR_DAYS[d.getDay()] + ' ' + d.getDate();
-    daySel.appendChild(o);
+    o.textContent = AR_DAYS[d.getDay()] + '  ' + d.getDate() + ' ' + AR_MONTHS[d.getMonth()];
+    picker.appendChild(o);
   });
-}
-
-function onDateSelChange() {
-  const monthSel = document.getElementById('dateMonthSel');
-  const daySel = document.getElementById('dateDaySel');
-  const mv = monthSel.value;
-  if (!mv) {
-    daySel.innerHTML = '<option value="">▾ اليوم</option>';
-    document.getElementById('timeSlotsCard').style.display = 'none';
-    return;
-  }
-  const monthObj = window._bookingByMonth[mv];
-  if (monthObj) fillDays(monthObj);
-  if (daySel.value) selectDateStr(daySel.value);
 }
 
 async function selectDateStr(dateStr) {
@@ -974,9 +929,7 @@ async function confirmBooking() {
 
 function resetBooking() {
   selDate = null; selTime = null; bookedMap = {};
-  document.getElementById('dateMonthSel').innerHTML = '<option value="">الشهر</option>';
-  document.getElementById('dateDaySel').innerHTML = '<option value="">اليوم</option>';
-  window._bookingDays = null; window._bookingByMonth = null;
+  document.getElementById('datePicker').innerHTML = '<option value="">— اختر يوماً —</option>';
   document.getElementById('timeSlotsCard').style.display = 'none';
   document.getElementById('contactCard').style.display = 'none';
   document.getElementById('bookingConfirm').style.display = 'none';
