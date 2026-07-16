@@ -32,6 +32,43 @@
       font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
       margin: 0; padding: 0;
     }
+    /* ── Splash ── */
+    #splash {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: #1B3F6B;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.7s ease;
+    }
+    #splash.hide { opacity: 0; pointer-events: none; }
+    #splashContent {
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+      animation: splashIn 0.8s ease forwards;
+    }
+    @keyframes splashIn {
+      from { opacity: 0; transform: scale(0.8); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    #splashLogo {
+      width: 96px; height: 96px; border-radius: 22px;
+      object-fit: cover; margin-bottom: 8px;
+    }
+    #splashName {
+      font-size: 26px; font-weight: 800; color: #fff; letter-spacing: 1px;
+    }
+    #splashSub {
+      font-size: 13px; color: rgba(255,255,255,0.65); font-weight: 400; margin-top: -6px;
+    }
+    #splashTagline {
+      margin-top: 18px; font-size: 15px; color: rgba(255,255,255,0.85);
+      font-weight: 500; letter-spacing: 0.5px;
+      animation: taglineIn 0.7s ease 0.9s both;
+    }
+    @keyframes taglineIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
     #app {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -386,6 +423,17 @@
   </style>
 </head>
 <body>
+
+<!-- Splash Screen -->
+<div id="splash">
+  <div id="splashContent">
+    <img id="splashLogo" src="icon.jpg" alt="logo">
+    <div id="splashName">دار التراث</div>
+    <div id="splashSub">للاستشارات الهندسية</div>
+    <div id="splashTagline">نبني معاك بيت العمر</div>
+  </div>
+</div>
+
 <div id="app">
 
   <!-- ══ SPLASH ══ -->
@@ -700,6 +748,13 @@ function updateProgress() {
   document.getElementById('progressText').textContent = `${n} من ${TOTAL_REQ} حقول مكتملة`;
 }
 updateProgress();
+
+// ── Splash ──
+setTimeout(() => {
+  const splash = document.getElementById('splash');
+  splash.classList.add('hide');
+  setTimeout(() => splash.style.display = 'none', 700);
+}, 3000);
 
 // ── Inputs ──
 function onArea(v) {
