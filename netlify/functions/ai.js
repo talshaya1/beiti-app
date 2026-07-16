@@ -5,7 +5,7 @@ exports.handler = async (event) => {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
-  const apiKey = process.env.DEEPSEEK_API_KEY;
+  const apiKey = (process.env.DEEPSEEK_API_KEY || '').trim();
   if (!apiKey) {
     return {
       statusCode: 500,
