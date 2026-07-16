@@ -676,6 +676,7 @@
         <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">تواصل معنا</div>
         <div style="font-size:13px;color:var(--muted);line-height:2">للتواصل المباشر أو الاستفسار<br>أو احجز موعدك من خلال التطبيق</div>
       </div>
+      <div id="adminPanel"></div>
     </div>
   </div>
 
@@ -735,40 +736,39 @@ function trackEvent(data) {
 }
 
 // ── Admin dashboard ──
-(function() {
-  const params = new URLSearchParams(window.location.search);
-  const token = params.get('admin');
-  if (!token) return;
-  fetch('/api/analytics?token=' + encodeURIComponent(token))
+const ADMIN_TOKEN = new URLSearchParams(window.location.search).get('admin');
+function loadAdminPanel() {
+  if (!ADMIN_TOKEN) return;
+  const container = document.getElementById('adminPanel');
+  if (!container) return;
+  container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">جارٍ تحميل البيانات...</div>';
+  fetch('/api/analytics?token=' + encodeURIComponent(ADMIN_TOKEN))
     .then(r => r.json())
     .then(d => {
-      if (d.error) return;
-      const panel = document.createElement('div');
-      panel.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:#0C1E35;z-index:99999;overflow-y:auto;display:flex;flex-direction:column;align-items:center;padding:40px 20px;font-family:inherit;';
-      panel.innerHTML = `
-        <div style="color:#fff;font-size:22px;font-weight:700;margin-bottom:8px">لوحة المشرف</div>
-        <div style="color:#8BA8CC;font-size:13px;margin-bottom:32px">دار التراث – بيتي</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%;max-width:420px">
-          ${card('👁️ زوار التطبيق', d.visits)}
-          ${card('✨ طلبات التصور بالذكاء الاصطناعي', d.ai_requests)}
-          ${card('📅 الحجوزات المؤكدة', d.bookings)}
-          ${card('👥 متوسط أفراد الأسرة', d.avg_people)}
-          ${card('🏢 أكثر عدد أدوار شيوعاً', d.top_floors + ' أدوار')}
-          ${card('🏗️ منازل بسرداب', d.basement_count)}
-          ${card('🏠 منازل بشقة للإيجار', d.rental_count)}
-          ${card('📋 استبيانات مكتملة', d.survey_count)}
-        </div>
-        <div style="margin-top:32px;color:#4A6A8A;font-size:11px">آخر تحديث: ${new Date().toLocaleString('ar-KW')}</div>
-      `;
-      document.body.appendChild(panel);
+      if (d.error) { container.innerHTML = ''; return; }
       function card(label, val) {
-        return `<div style="background:#1B3F6B;border-radius:14px;padding:20px 16px;text-align:center">
-          <div style="color:#8BA8CC;font-size:12px;margin-bottom:10px;line-height:1.4">${label}</div>
-          <div style="color:#fff;font-size:28px;font-weight:700">${val ?? '—'}</div>
+        return `<div style="background:var(--primary);border-radius:14px;padding:16px 12px;text-align:center">
+          <div style="color:#8BA8CC;font-size:11px;margin-bottom:8px;line-height:1.4">${label}</div>
+          <div style="color:#fff;font-size:26px;font-weight:700">${val ?? '—'}</div>
         </div>`;
       }
+      container.innerHTML = `
+        <div style="margin-top:20px;border-top:1.5px solid var(--border);padding-top:20px">
+          <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">🔒 لوحة المشرف</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:16px">آخر تحديث: ${new Date().toLocaleString('ar-KW')}</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            ${card('👁️ زوار التطبيق', d.visits)}
+            ${card('✨ طلبات التصور AI', d.ai_requests)}
+            ${card('📅 الحجوزات المؤكدة', d.bookings)}
+            ${card('👥 متوسط أفراد الأسرة', d.avg_people)}
+            ${card('🏢 أكثر عدد أدوار', d.top_floors + ' أدوار')}
+            ${card('🏗️ منازل بسرداب', d.basement_count)}
+            ${card('🏠 منازل بشقة إيجار', d.rental_count)}
+            ${card('📋 استبيانات مكتملة', d.survey_count)}
+          </div>
+        </div>`;
     }).catch(() => {});
-})();
+}
 
 // ── Splash ──
 document.getElementById('app').style.display = 'none';
@@ -848,7 +848,7 @@ function switchTab(tab) {
     case 'home':    showScreen('screenForm'); break;
     case 'history': showScreen('screenHistory'); renderHistory(); break;
     case 'booking': showScreen('screenBooking'); initBooking(); break;
-    case 'location':showScreen('screenLocation'); break;
+    case 'location':showScreen('screenLocation'); loadAdminPanel(); break;
   }
 }
 
