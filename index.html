@@ -104,7 +104,7 @@
     .progress-label span { font-size: 11px; color: rgba(255,255,255,.7); }
 
     /* ── Screens ── */
-    .screen { flex: 1; overflow-y: auto; display: none; }
+    .screen { flex: 1; overflow-y: auto; overflow-x: hidden; display: none; width: 100%; }
     .screen.active { display: block; }
     .screen::-webkit-scrollbar { display: none; }
     .scroll-pad { padding: 18px 18px 110px; }
@@ -375,7 +375,7 @@
     .date-btn.selected .day-num { color: #fff; }
     .date-btn .day-month { font-size: 9px; color: var(--muted); }
     .date-btn.selected .day-month { color: rgba(255,255,255,.6); }
-    .time-slots { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .time-slots { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 8px; width: 100%; }
     .time-btn {
       padding: 14px 8px; border-radius: 12px; border: 1.5px solid var(--border);
       background: var(--input-bg); cursor: pointer; font-family: inherit;
@@ -384,7 +384,8 @@
     .time-btn.selected { background: var(--primary); border-color: var(--primary); color: #fff; }
     .time-btn.booked { background: var(--bg); color: var(--muted); opacity: .5; cursor: not-allowed; }
     .booking-input {
-      width: 100%; background: var(--input-bg); border: 1.5px solid var(--border);
+      width: 100%; max-width: 100%; box-sizing: border-box;
+      background: var(--input-bg); border: 1.5px solid var(--border);
       border-radius: 10px; padding: 12px 13px; font-size: 14px; font-family: inherit;
       color: var(--text); direction: ltr; outline: none; transition: border-color .2s; margin-top: 8px;
     }
