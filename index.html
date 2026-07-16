@@ -33,18 +33,24 @@
       margin: 0; padding: 0;
     }
     #app {
-      width: 100%; height: 100dvh;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
       background: var(--bg);
       border-radius: 0;
       overflow: hidden;
-      position: relative;
       box-shadow: none;
       display: flex;
       flex-direction: column;
     }
     @media (min-width: 1025px) {
       html, body { background: #0a1628; }
-      #app { width: 390px; height: 844px; border-radius: 44px; box-shadow: 0 40px 100px rgba(0,0,0,0.7); }
+      #app {
+        position: relative;
+        top: auto; left: auto; right: auto; bottom: auto;
+        width: 390px; height: 844px;
+        border-radius: 44px;
+        box-shadow: 0 40px 100px rgba(0,0,0,0.7);
+      }
     }
 
     /* ── Splash Screen ── */
