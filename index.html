@@ -748,14 +748,15 @@ function updateProgress() {
 updateProgress();
 
 // ── Splash ──
-document.getElementById('app').style.opacity = '0';
+document.getElementById('app').style.display = 'none';
 setTimeout(() => {
   const splash = document.getElementById('splash');
   const app = document.getElementById('app');
   splash.classList.add('hide');
-  app.style.transition = 'opacity 0.5s ease';
-  app.style.opacity = '1';
-  setTimeout(() => splash.style.display = 'none', 700);
+  setTimeout(() => {
+    splash.style.display = 'none';
+    app.style.display = 'flex';
+  }, 700);
 }, 2800);
 
 // ── Inputs ──
