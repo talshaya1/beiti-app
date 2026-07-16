@@ -1,3 +1,5 @@
+const https = require('https');
+
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
@@ -16,23 +18,40 @@ exports.handler = async (event) => {
       ? Buffer.from(event.body, 'base64').toString('utf8')
       : event.body;
 
-    const parsed = JSON.parse(rawBody);
+    const bodyBuffer = Buffer.from(rawBody, 'utf8');
 
-    const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + apiKey
-      },
-      body: JSON.stringify(parsed)
+    const result = await new Promise((resolve, reject) => {
+      const options = {
+        hostname: 'api.deepseek.com',
+        path: '/v1/chat/completions',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + apiKey,
+          'Content-Length': bodyBuffer.length
+        }
+      };
+
+      const req = https.request(options, (res) => {
+        const chunks = [];
+        res.on('data', (chunk) => chunks.push(chunk));
+        res.on('end', () => {
+          resolve({
+            statusCode: res.statusCode,
+            body: Buffer.concat(chunks).toString('utf8')
+          });
+        });
+      });
+
+      req.on('error', reject);
+      req.write(bodyBuffer);
+      req.end();
     });
 
-    const text = await res.text();
-
     return {
-      statusCode: res.status,
+      statusCode: result.statusCode,
       headers: { 'Content-Type': 'application/json' },
-      body: text
+      body: result.body
     };
   } catch (e) {
     return {
