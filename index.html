@@ -361,20 +361,6 @@
     }
 
     /* ── Booking ── */
-    .date-scroll { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0 8px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-    .date-scroll::-webkit-scrollbar { display: none; }
-    .date-btn {
-      flex-shrink: 0; display: flex; flex-direction: column; align-items: center;
-      padding: 10px 14px; border-radius: 12px; border: 1.5px solid var(--border);
-      background: var(--input-bg); cursor: pointer; gap: 2px; transition: all .15s; font-family: inherit;
-    }
-    .date-btn.selected { background: var(--primary); border-color: var(--primary); }
-    .date-btn .day-name { font-size: 10px; color: var(--muted); font-weight: 600; }
-    .date-btn.selected .day-name { color: rgba(255,255,255,.7); }
-    .date-btn .day-num { font-size: 18px; font-weight: 700; color: var(--text); }
-    .date-btn.selected .day-num { color: #fff; }
-    .date-btn .day-month { font-size: 9px; color: var(--muted); }
-    .date-btn.selected .day-month { color: rgba(255,255,255,.6); }
     .time-slots { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 8px; width: 100%; }
     .time-btn {
       padding: 14px 8px; border-radius: 12px; border: 1.5px solid var(--border);
@@ -602,7 +588,14 @@
 
       <div class="q-card">
         <div class="q-label">📆 اختر التاريخ</div>
-        <div class="date-scroll" id="datePicker"></div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <select id="dateMonthSel" onchange="onDateSelChange()" style="flex:1;padding:12px 10px;border-radius:10px;border:1.5px solid var(--border);background:var(--input-bg);color:var(--text);font-size:14px;font-family:inherit;outline:none;appearance:none;-webkit-appearance:none;text-align:center">
+            <option value="">الشهر</option>
+          </select>
+          <select id="dateDaySel" onchange="onDateSelChange()" style="flex:1;padding:12px 10px;border-radius:10px;border:1.5px solid var(--border);background:var(--input-bg);color:var(--text);font-size:14px;font-family:inherit;outline:none;appearance:none;-webkit-appearance:none;text-align:center">
+            <option value="">اليوم</option>
+          </select>
+        </div>
       </div>
 
       <div class="q-card" id="timeSlotsCard" style="display:none">
@@ -859,22 +852,62 @@ function initBooking() {
   selDate = null; selTime = null;
   document.getElementById('timeSlotsCard').style.display = 'none';
   document.getElementById('contactCard').style.display = 'none';
-  const picker = document.getElementById('datePicker');
-  if (picker.children.length) return;
-  picker.innerHTML = workingDays(14).map(d =>
-    `<button class="date-btn" onclick="selectDate('${d2s(d)}',this)">
-      <span class="day-name">${AR_DAYS[d.getDay()]}</span>
-      <span class="day-num">${d.getDate()}</span>
-      <span class="day-month">${AR_MONTHS[d.getMonth()]}</span>
-    </button>`).join('');
+  const monthSel = document.getElementById('dateMonthSel');
+  const daySel = document.getElementById('dateDaySel');
+  if (monthSel.options.length > 1) return;
+  const days = workingDays(30);
+  // group by month
+  const byMonth = {};
+  days.forEach(d => {
+    const mk = d.getFullYear() + '-' + d.getMonth();
+    if (!byMonth[mk]) byMonth[mk] = { label: AR_MONTHS[d.getMonth()] + ' ' + d.getFullYear(), month: d.getMonth(), year: d.getFullYear(), days: [] };
+    byMonth[mk].days.push(d);
+  });
+  window._bookingDays = days;
+  window._bookingByMonth = byMonth;
+  Object.values(byMonth).forEach(m => {
+    const o = document.createElement('option');
+    o.value = m.month + '-' + m.year;
+    o.textContent = m.label;
+    monthSel.appendChild(o);
+  });
+  if (Object.keys(byMonth).length === 1) {
+    monthSel.selectedIndex = 1;
+    fillDays(Object.values(byMonth)[0]);
+  }
 }
 
-async function selectDate(dateStr, el) {
+function fillDays(monthObj) {
+  const daySel = document.getElementById('dateDaySel');
+  daySel.innerHTML = '<option value="">اليوم</option>';
+  monthObj.days.forEach(d => {
+    const o = document.createElement('option');
+    o.value = d2s(d);
+    o.textContent = AR_DAYS[d.getDay()] + ' ' + d.getDate();
+    daySel.appendChild(o);
+  });
+}
+
+function onDateSelChange() {
+  const monthSel = document.getElementById('dateMonthSel');
+  const daySel = document.getElementById('dateDaySel');
+  const mv = monthSel.value;
+  if (!mv) { daySel.innerHTML = '<option value="">اليوم</option>'; document.getElementById('timeSlotsCard').style.display='none'; return; }
+  const monthObj = window._bookingByMonth[mv.split('-')[0] + '-' + mv.split('-')[1].replace(/.*-/,'')];
+  // find by key
+  const key = Object.keys(window._bookingByMonth).find(k => {
+    const m = window._bookingByMonth[k];
+    return (m.month + '-' + m.year) === mv;
+  });
+  if (key) fillDays(window._bookingByMonth[key]);
+  if (daySel.value) selectDateStr(daySel.value);
+  daySel.onchange = () => { if (daySel.value) selectDateStr(daySel.value); else document.getElementById('timeSlotsCard').style.display='none'; };
+}
+
+async function selectDateStr(dateStr) {
   selDate = dateStr; selTime = null;
-  document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('selected'));
-  el.classList.add('selected');
   document.getElementById('timeSlotsCard').style.display = 'block';
-  document.getElementById('timeSlots').innerHTML = '<div style="text-align:center;padding:12px;color:var(--muted);font-size:12px;grid-column:1/-1">جارٍ التحقق من المواعيد...</div>';
+  document.getElementById('timeSlots').innerHTML = '<div style="text-align:center;padding:12px;color:var(--muted);font-size:12px;grid-column:1/-1">جارٍ التحقق...</div>';
   document.getElementById('contactCard').style.display = 'none';
   try {
     const r = await fetch(`/api/booking?date=${dateStr}`);
@@ -883,6 +916,8 @@ async function selectDate(dateStr, el) {
   } catch { bookedMap[dateStr] = []; }
   renderSlots(dateStr);
 }
+
+async function selectDate(dateStr, el) { await selectDateStr(dateStr); }
 
 function renderSlots(dateStr) {
   const booked = bookedMap[dateStr] || [];
@@ -938,7 +973,9 @@ async function confirmBooking() {
 
 function resetBooking() {
   selDate = null; selTime = null; bookedMap = {};
-  document.getElementById('datePicker').innerHTML = '';
+  document.getElementById('dateMonthSel').innerHTML = '<option value="">الشهر</option>';
+  document.getElementById('dateDaySel').innerHTML = '<option value="">اليوم</option>';
+  window._bookingDays = null; window._bookingByMonth = null;
   document.getElementById('timeSlotsCard').style.display = 'none';
   document.getElementById('contactCard').style.display = 'none';
   document.getElementById('bookingConfirm').style.display = 'none';
