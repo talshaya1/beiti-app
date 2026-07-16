@@ -5,25 +5,34 @@ exports.handler = async (event) => {
 
   const apiKey = process.env.DEEPSEEK_API_KEY;
   if (!apiKey) {
-    return { statusCode: 500, body: JSON.stringify({ error: { message: 'مفتاح API غير مضبوط' } }) };
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: { message: 'مفتاح API غير مضبوط' } })
+    };
   }
 
   try {
-    const body = JSON.parse(event.body);
+    const rawBody = event.isBase64Encoded
+      ? Buffer.from(event.body, 'base64').toString('utf8')
+      : event.body;
+
+    const parsed = JSON.parse(rawBody);
+
     const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'Authorization': 'Bearer ' + apiKey
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(parsed)
     });
 
-    const data = await res.json();
+    const text = await res.text();
+
     return {
       statusCode: res.status,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      body: text
     };
   } catch (e) {
     return {
