@@ -857,7 +857,8 @@ async function regenerate() {
   await generate();
 }
 
-async function shareHistoryReport(text) {
+async function shareHistoryReport() {
+  const text = window._historyReportText || '';
   if (navigator.share) {
     try { await navigator.share({ title: 'تقرير دار التراث', text }); return; } catch(e) { if (e.name === 'AbortError') return; }
   }
@@ -946,7 +947,7 @@ function viewHistory(idx) {
   const notesHtml = item.notes ? `<div class="result-card" style="margin-bottom:14px;border-right:3px solid var(--primary)">
     <div style="font-size:12px;color:var(--primary);font-weight:700;margin-bottom:6px">📝 ملاحظاتك الخاصة</div>
     <p style="font-size:13px">${item.notes}</p></div>` : '';
-  const reportText = [
+  window._historyReportText = [
     'تصور أولي – دار التراث للاستشارات الهندسية',
     `${item.state.loc||'—'} • ${item.state.area} م² • ${item.state.floors} أدوار • ${item.state.people} أفراد`,
     item.notes ? `ملاحظات: ${item.notes}` : '',
@@ -963,7 +964,7 @@ function viewHistory(idx) {
     </div>
     ${notesHtml}
     ${renderSections(parseRaw(item.content))}
-    <button onclick="shareHistoryReport(${JSON.stringify(reportText).replace(/</g,'&lt;')})" style="margin-top:16px;width:100%;padding:13px;border-radius:12px;border:none;background:var(--primary);color:#fff;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer">📤 مشاركة / حفظ</button>`;
+    <button onclick="shareHistoryReport()" style="margin-top:16px;width:100%;padding:13px;border-radius:12px;border:none;background:var(--primary);color:#fff;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer">📤 مشاركة / حفظ</button>`;
   showScreen('screenHistoryDetail');
 }
 
