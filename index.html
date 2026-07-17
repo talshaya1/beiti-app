@@ -585,6 +585,11 @@
       </div>
       <div class="sum-chips" id="sumChips"></div>
       <div id="aiContent"></div>
+      <div id="editNotesBox" style="display:none;margin-top:16px;background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:14px">
+        <div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:8px">✏️ عدّل ملاحظاتك</div>
+        <textarea id="editNotesInput" style="width:100%;min-height:90px;border:1.5px solid var(--border);border-radius:10px;padding:10px;font-size:13px;font-family:inherit;color:var(--text);background:var(--input-bg);resize:vertical" placeholder="أضف أو عدّل ملاحظاتك هنا..."></textarea>
+        <button onclick="regenerate()" style="margin-top:10px;width:100%;padding:12px;border-radius:10px;border:none;background:var(--primary);color:#fff;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer">🔄 عدّل التصور</button>
+      </div>
       <div id="imgPromptBox" style="display:none;margin-top:16px">
         <div class="result-section-title" style="margin-bottom:8px">🖼️ برومبت جاهز لتوليد صورة تصورية</div>
         <div style="background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:14px">
@@ -689,6 +694,7 @@
   <!-- Bottom bar (نتيجة AI) -->
   <div class="bottom-bar" id="bottomBar" style="display:none">
     <button class="btn btn-ghost" onclick="goBack()">← رجوع</button>
+    <button class="btn btn-ghost" onclick="toggleEditNotes()" id="btnEditNotes">✏️ تعديل</button>
     <button class="btn btn-primary" onclick="saveReport()">📤 مشاركة / حفظ</button>
   </div>
 
@@ -832,6 +838,35 @@ function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 }
+function toggleEditNotes() {
+  const box = document.getElementById('editNotesBox');
+  const visible = box.style.display !== 'none';
+  if (!visible) {
+    document.getElementById('editNotesInput').value = document.getElementById('notesInput').value;
+    box.style.display = 'block';
+    box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } else {
+    box.style.display = 'none';
+  }
+}
+
+async function regenerate() {
+  const newNotes = document.getElementById('editNotesInput').value.trim();
+  document.getElementById('notesInput').value = newNotes;
+  document.getElementById('editNotesBox').style.display = 'none';
+  await generate();
+}
+
+async function shareHistoryReport(text) {
+  if (navigator.share) {
+    try { await navigator.share({ title: 'تقرير دار التراث', text }); return; } catch(e) { if (e.name === 'AbortError') return; }
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    try { await navigator.clipboard.writeText(text); showToast('✅ تم نسخ التقرير'); return; } catch(e) {}
+  }
+  showToast('⚠️ المشاركة غير مدعومة على هذا الجهاز');
+}
+
 function goBack() {
   document.getElementById('bottomBar').style.display = 'none';
   document.getElementById('bottomNav').style.display = 'flex';
@@ -911,6 +946,14 @@ function viewHistory(idx) {
   const notesHtml = item.notes ? `<div class="result-card" style="margin-bottom:14px;border-right:3px solid var(--primary)">
     <div style="font-size:12px;color:var(--primary);font-weight:700;margin-bottom:6px">📝 ملاحظاتك الخاصة</div>
     <p style="font-size:13px">${item.notes}</p></div>` : '';
+  const reportText = [
+    'تصور أولي – دار التراث للاستشارات الهندسية',
+    `${item.state.loc||'—'} • ${item.state.area} م² • ${item.state.floors} أدوار • ${item.state.people} أفراد`,
+    item.notes ? `ملاحظات: ${item.notes}` : '',
+    '─────────────────────',
+    item.content
+  ].filter(Boolean).join('\n');
+
   el.innerHTML = `
     <button onclick="switchTab('history')" style="border:none;background:none;color:var(--primary);font-size:14px;font-family:inherit;cursor:pointer;margin-bottom:16px;padding:0">← رجوع للتصوراتي</button>
     <div class="result-header">
@@ -919,7 +962,8 @@ function viewHistory(idx) {
       <div style="font-size:11px;color:var(--muted);margin-top:4px">${fmtDate(item.date)}</div>
     </div>
     ${notesHtml}
-    ${renderSections(parseRaw(item.content))}`;
+    ${renderSections(parseRaw(item.content))}
+    <button onclick="shareHistoryReport(${JSON.stringify(reportText).replace(/</g,'&lt;')})" style="margin-top:16px;width:100%;padding:13px;border-radius:12px;border:none;background:var(--primary);color:#fff;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer">📤 مشاركة / حفظ</button>`;
   showScreen('screenHistoryDetail');
 }
 
